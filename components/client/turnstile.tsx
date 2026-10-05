@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type TurnstileApi = {
   ready: (callback: () => void) => void;
@@ -23,7 +23,7 @@ function loadTurnstile() {
   if (window.turnstile) return Promise.resolve();
   if (script) return script;
   script = new Promise((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>('script[data-turnstile]');
+    const existing = document.querySelector<HTMLScriptElement>('script[src*="challenges.cloudflare.com/turnstile"]');
     const element = existing || document.createElement('script');
     const loaded = () => resolve();
     const failed = () => reject(new Error('Could not load Turnstile'));
@@ -46,10 +46,12 @@ export default function Turnstile({ action, onToken }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | undefined>(undefined);
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!siteKey || !container.current) return;
     let cancelled = false;
+    const timeout = window.setTimeout(() => { if (!widgetId.current) setFailed(true); }, 8_000);
     loadTurnstile().then(() => {
       window.turnstile?.ready(() => {
         if (cancelled || !container.current || !window.turnstile) return;
@@ -57,18 +59,21 @@ export default function Turnstile({ action, onToken }: Props) {
           sitekey: siteKey,
           action,
           theme: 'auto',
-          callback: onToken,
+          callback: token => { setFailed(false); onToken(token); },
           'expired-callback': () => onToken(''),
-          'error-callback': () => onToken(''),
+          'error-callback': () => { setFailed(true); onToken(''); },
         });
       });
-    }).catch(() => onToken(''));
+    }).catch(() => { setFailed(true); onToken(''); });
     return () => {
       cancelled = true;
+      window.clearTimeout(timeout);
       if (widgetId.current) window.turnstile?.remove(widgetId.current);
     };
   }, [action, onToken, siteKey]);
 
   if (!siteKey) return null;
-  return <div className="turnstile" ref={container} aria-label="Spam protection" />;
+  return <div className="turnstile" ref={container} aria-label="Spam protection">
+    {failed ? <p className="turnstile__error" role="alert">The spam check could not load. Please disable any content blocker or try another network.</p> : null}
+  </div>;
 }

@@ -714,6 +714,7 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 var(--pad); }
 .form__msg.is-ok { color: var(--ink); }
 .turnstile { flex-basis: 100%; min-height: 65px; }
 .turnstile > div { max-width: 100%; }
+.turnstile__error { color: #c2410c; font-size: 14px; }
 .contact__side { display: grid; gap: var(--gutter); }
 .contact__side .label { margin-bottom: 6px; }
 .contact__side p:not(.label) { color: var(--ink); font-size: 16px; }

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Inter_Tight } from 'next/font/google';
+import Script from 'next/script';
 import { site } from '@/lib/site';
 import './globals.css';
 
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en-US" className={`${inter.variable} ${interTight.variable}`} suppressHydrationWarning>
       <head>
         <script id="lamp" dangerouslySetInnerHTML={{ __html: lamp }} />
+        {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" strategy="beforeInteractive" /> : null}
         {site.analytics.plausibleDomain ? <script defer data-domain={site.analytics.plausibleDomain} src="https://plausible.io/js/script.js" /> : null}
       </head>
       <body>{children}</body>
