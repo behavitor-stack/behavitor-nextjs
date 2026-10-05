@@ -25,9 +25,19 @@ function loadTurnstile() {
   script = new Promise((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>('script[src*="challenges.cloudflare.com/turnstile"]');
     const element = existing || document.createElement('script');
-    const loaded = () => resolve();
-    const failed = () => reject(new Error('Could not load Turnstile'));
-    element.addEventListener('load', loaded, { once: true });
+    const interval = window.setInterval(() => {
+      if (!window.turnstile) return;
+      window.clearInterval(interval);
+      window.clearTimeout(timeout);
+      resolve();
+    }, 50);
+    const failed = () => {
+      window.clearInterval(interval);
+      window.clearTimeout(timeout);
+      script = undefined;
+      reject(new Error('Could not load Turnstile'));
+    };
+    const timeout = window.setTimeout(failed, 12_000);
     element.addEventListener('error', failed, { once: true });
     if (!existing) {
       element.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
@@ -51,7 +61,7 @@ export default function Turnstile({ action, onToken }: Props) {
   useEffect(() => {
     if (!siteKey || !container.current) return;
     let cancelled = false;
-    const timeout = window.setTimeout(() => { if (!widgetId.current) setFailed(true); }, 8_000);
+    const timeout = window.setTimeout(() => { if (!widgetId.current) setFailed(true); }, 13_000);
     loadTurnstile().then(() => {
       window.turnstile?.ready(() => {
         if (cancelled || !container.current || !window.turnstile) return;
@@ -63,6 +73,7 @@ export default function Turnstile({ action, onToken }: Props) {
           'expired-callback': () => onToken(''),
           'error-callback': () => { setFailed(true); onToken(''); },
         });
+        setFailed(false);
       });
     }).catch(() => { setFailed(true); onToken(''); });
     return () => {
