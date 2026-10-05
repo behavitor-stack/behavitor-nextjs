@@ -20,13 +20,13 @@ declare global { interface Window { turnstile?: TurnstileApi } }
 let script: Promise<void> | undefined;
 
 function loadTurnstile() {
-  if (window.turnstile) return Promise.resolve();
+  if (typeof window.turnstile?.render === 'function') return Promise.resolve();
   if (script) return script;
   script = new Promise((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>('script[src*="challenges.cloudflare.com/turnstile"]');
     const element = existing || document.createElement('script');
     const interval = window.setInterval(() => {
-      if (!window.turnstile) return;
+      if (typeof window.turnstile?.render !== 'function') return;
       window.clearInterval(interval);
       window.clearTimeout(timeout);
       resolve();
@@ -63,18 +63,16 @@ export default function Turnstile({ action, onToken }: Props) {
     let cancelled = false;
     const timeout = window.setTimeout(() => { if (!widgetId.current) setFailed(true); }, 13_000);
     loadTurnstile().then(() => {
-      window.turnstile?.ready(() => {
-        if (cancelled || !container.current || !window.turnstile) return;
-        widgetId.current = window.turnstile.render(container.current, {
-          sitekey: siteKey,
-          action,
-          theme: 'auto',
-          callback: token => { setFailed(false); onToken(token); },
-          'expired-callback': () => onToken(''),
-          'error-callback': () => { setFailed(true); onToken(''); },
-        });
-        setFailed(false);
+      if (cancelled || !container.current || !window.turnstile) return;
+      widgetId.current = window.turnstile.render(container.current, {
+        sitekey: siteKey,
+        action,
+        theme: 'auto',
+        callback: token => { setFailed(false); onToken(token); },
+        'expired-callback': () => onToken(''),
+        'error-callback': () => { setFailed(true); onToken(''); },
       });
+      setFailed(false);
     }).catch(() => { setFailed(true); onToken(''); });
     return () => {
       cancelled = true;
