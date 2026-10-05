@@ -545,6 +545,7 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 var(--pad); }
 .news__msg { flex-basis: 100%; min-height: 1.4em; font-size: 14px; color: var(--grey); }
 .news__msg.is-ok { color: var(--ink); }
 .news__msg.is-err { color: #c2410c; } /* orange text is too faint to read; errors use the darker tone */
+.news__form .turnstile { flex-basis: 100%; }
 
 /* reading progress */
 .progress { position: fixed; inset: 0 0 auto; z-index: 60; height: 2px; }
@@ -711,6 +712,8 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 var(--pad); }
 .form__msg { font-size: 15px; color: var(--grey); }
 .form__msg.is-err { color: #c2410c; }
 .form__msg.is-ok { color: var(--ink); }
+.turnstile { flex-basis: 100%; min-height: 65px; }
+.turnstile > div { max-width: 100%; }
 .contact__side { display: grid; gap: var(--gutter); }
 .contact__side .label { margin-bottom: 6px; }
 .contact__side p:not(.label) { color: var(--ink); font-size: 16px; }

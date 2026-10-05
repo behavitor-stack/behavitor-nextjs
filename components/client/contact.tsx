@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { EMAIL, isEmail, mailto, postForm, track } from '@/lib/client';
+import Turnstile from '@/components/client/turnstile';
 
 type Svc = { id: string; name: string; goals: string[] };
 const OTHER = { id: 'other', name: 'Something else' };
@@ -51,6 +52,7 @@ function ContactForm({ services, pre }: { services: Svc[]; pre: string | null })
   const [email, setEmail] = useState('');
   const [website, setWebsite] = useState('');
   const [gotcha, setGotcha] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [errors, setErrors] = useState<Errors>({});
   const [note, setNote] = useState<{ kind: '' | 'ok' | 'err'; node: React.ReactNode }>({ kind: '', node: null });
   const [tip, setTip] = useState('');
@@ -159,12 +161,16 @@ function ContactForm({ services, pre }: { services: Svc[]; pre: string | null })
       return;
     }
     if (gotcha) return; // spam trap
+    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken) {
+      setNote({ kind: 'err', node: 'Please complete the spam check, then send your inquiry.' });
+      return;
+    }
     setSending(true);
     setNote({ kind: '', node: null });
     try {
       const r = await postForm('/api/contact/', {
         kind: 'inquiry', subject, name: name.trim(), email: email.trim(), website: website.trim(),
-        services: serviceNames, goals, message: message.trim(),
+        services: serviceNames, goals, message: message.trim(), turnstileToken,
       });
       if (r === 'fallback') {
         // email isn't set up yet: hand over to the email app, with a copy button for people who don't have one
@@ -246,6 +252,7 @@ function ContactForm({ services, pre }: { services: Svc[]; pre: string | null })
       </div>
 
       <div className="form__foot">
+        <Turnstile action="contact" onToken={setTurnstileToken} />
         <button className="btn btn--dark" type="submit" disabled={sending} aria-busy={sending}>{sending ? 'Sending…' : 'Send inquiry'}</button>
         <p className="form__assure">We reply within two business days. No spam, ever.</p>
         <p className={`form__msg${note.kind ? ` is-${note.kind}` : ''}`} role="status" aria-live="polite">{note.node}</p>
@@ -282,6 +289,7 @@ function Done({ name, email, website, audit }: { name: string; email: string; we
   const [site, setSite] = useState('');
   const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [msg, setMsg] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   useEffect(() => {
     box.current?.focus({ preventScroll: true });
     box.current?.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
@@ -290,9 +298,10 @@ function Done({ name, email, website, audit }: { name: string; email: string; we
     e.preventDefault();
     if (state !== 'idle') return;
     if (!budget && !timeline && !site.trim()) { setMsg('Tap a budget or timeline first, or skip this; it’s optional.'); return; }
+    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken) { setMsg('Please complete the spam check, then try again.'); return; }
     setState('sending');
     try {
-      await postForm('/api/contact/', { kind: 'details', name, email, budget, timeline, website: site.trim() });
+      await postForm('/api/contact/', { kind: 'details', name, email, budget, timeline, website: site.trim(), turnstileToken });
       setState('sent');
       track('Inquiry details added');
     } catch {
@@ -315,6 +324,7 @@ function Done({ name, email, website, audit }: { name: string; email: string; we
               <input id="fu-site" name="website" type="text" inputMode="url" autoComplete="url" autoCapitalize="off" spellCheck={false} placeholder="yourcompany.com" value={site} onChange={e => setSite(e.target.value)} /></div>
           )}
           <div className="followup__foot">
+            <Turnstile action="details" onToken={setTurnstileToken} />
             <button type="submit" className="btn btn--sm" disabled={state === 'sending'} aria-busy={state === 'sending'}>{state === 'sending' ? 'Adding…' : 'Add these details'}</button>
             <p className="followup__msg" role="status" aria-live="polite">{msg}</p>
           </div>

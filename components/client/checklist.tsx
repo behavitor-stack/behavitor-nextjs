@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { EMAIL, isEmail, mailto, postForm, track } from '@/lib/client';
+import Turnstile from '@/components/client/turnstile';
 
 type Item = { id: string; name: string; question: string; short: string; good: string; art: string };
 type Verdict = 'pass' | 'fail';
@@ -115,6 +116,7 @@ function ResultsForm({ items, answers }: { items: Item[]; answers: Record<string
   const [email, setEmail] = useState('');
   const [site, setSite] = useState('');
   const [gotcha, setGotcha] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [msg, setMsg] = useState<{ kind: '' | 'ok' | 'err'; text: string }>({ kind: '', text: '' });
   const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
   const input = useRef<HTMLInputElement>(null);
@@ -126,10 +128,11 @@ function ResultsForm({ items, answers }: { items: Item[]; answers: Record<string
     const value = email.trim();
     if (!isEmail(value)) { setMsg({ kind: 'err', text: 'Please add your email, like name@company.com, so we can reply.' }); input.current?.focus(); return; }
     if (gotcha) return; // spam trap
+    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken) { setMsg({ kind: 'err', text: 'Please complete the spam check, then send your results.' }); return; }
     const results = items.map(l => ({ id: l.id, name: l.name, question: l.question, verdict: (answers[l.id] || 'unchecked') as Verdict | 'unchecked' }));
     setState('sending');
     try {
-      const r = await postForm('/api/contact/', { kind: 'checklist', email: value, website: site.trim(), results });
+      const r = await postForm('/api/contact/', { kind: 'checklist', email: value, website: site.trim(), results, turnstileToken });
       if (r === 'fallback') {
         setState('idle');
         setMsg({ kind: 'ok', text: `Your email app will open with your results ready. Press send, or write to ${EMAIL}.` });
@@ -164,6 +167,7 @@ function ResultsForm({ items, answers }: { items: Item[]; answers: Record<string
         <input id="cl-site" name="website" type="text" inputMode="url" autoComplete="url" autoCapitalize="off" spellCheck={false} placeholder="yourcompany.com (optional)" value={site} onChange={e => setSite(e.target.value)} />
         <button className="btn btn--dark btn--sm" type="submit" disabled={state === 'sending'} aria-busy={state === 'sending'}>{state === 'sending' ? 'Sending…' : 'Send my results'}</button>
       </div>
+      <Turnstile action="checklist" onToken={setTurnstileToken} />
       <p className={`clmail__msg${msg.kind ? ` is-${msg.kind}` : ''}`} id="cl-mail-msg" role="status" aria-live="polite">{msg.text}</p>
     </form>
   );

@@ -2,6 +2,7 @@
 // with Reply-To set to the visitor, so a reply goes straight to them.
 import { NextResponse, type NextRequest } from 'next/server';
 import { mailReady, sendToStudio, isEmail, str, strs, line, tooMany } from '@/lib/mail';
+import { verifyTurnstile } from '@/lib/turnstile';
 
 const bad = (error: string) => NextResponse.json({ ok: false, error }, { status: 400 });
 
@@ -10,7 +11,10 @@ export async function POST(req: NextRequest) {
   try { body = await req.json(); } catch { return bad('Invalid request'); }
   if (str(body._gotcha)) return NextResponse.json({ ok: true }); // spam trap filled in: pretend all is well
   if (!mailReady()) return NextResponse.json({ ok: false, fallback: true }, { status: 503 });
-  if (tooMany(req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown')) return NextResponse.json({ ok: false, error: 'Too many messages' }, { status: 429 });
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown';
+  if (tooMany(ip)) return NextResponse.json({ ok: false, error: 'Too many messages' }, { status: 429 });
+  const action = body.kind === 'inquiry' ? 'contact' : body.kind === 'details' ? 'details' : body.kind === 'checklist' ? 'checklist' : '';
+  if (!action || !await verifyTurnstile(body.turnstileToken, ip, action)) return NextResponse.json({ ok: false, error: 'Verification failed' }, { status: 403 });
 
   const email = str(body.email, 254);
   if (!isEmail(email)) return bad('A valid email is needed');

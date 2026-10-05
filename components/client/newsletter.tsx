@@ -1,10 +1,12 @@
 'use client';
 import { useState } from 'react';
 import { EMAIL, isEmail, mailto, postForm, track } from '@/lib/client';
+import Turnstile from '@/components/client/turnstile';
 
 export default function Newsletter() {
   const [email, setEmail] = useState('');
   const [gotcha, setGotcha] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [msg, setMsg] = useState<{ kind: '' | 'ok' | 'err'; text: string }>({ kind: '', text: '' });
   const [sending, setSending] = useState(false);
   const [invalid, setInvalid] = useState(false);
@@ -21,9 +23,13 @@ export default function Newsletter() {
     }
     setInvalid(false);
     if (gotcha) return; // spam trap
+    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken) {
+      setMsg({ kind: 'err', text: 'Please complete the spam check, then subscribe.' });
+      return;
+    }
     setSending(true);
     try {
-      const r = await postForm('/api/newsletter/', { email: value });
+      const r = await postForm('/api/newsletter/', { email: value, turnstileToken });
       if (r === 'fallback') {
         setMsg({ kind: 'ok', text: 'Almost done: your email app will open. Press send to confirm your subscription.' });
         location.href = mailto('Subscribe me to the newsletter', `Please add ${value} to the Behavitor newsletter.`);
@@ -51,6 +57,7 @@ export default function Newsletter() {
           <label className="sr" htmlFor="news-email">Email address</label>
           <input id="news-email" name="email" type="email" placeholder="you@company.com" autoComplete="email" value={email}
             aria-invalid={invalid} onChange={e => setEmail(e.target.value)} />
+          <Turnstile action="newsletter" onToken={setTurnstileToken} />
           <button className="btn btn--dark" type="submit" disabled={sending} aria-busy={sending}>{sending ? 'Subscribing…' : 'Subscribe'}</button>
           <p className={`news__msg${msg.kind ? ` is-${msg.kind}` : ''}`} role="status" aria-live="polite">{msg.text}</p>
           <p className="hp" aria-hidden="true"><label>Leave this empty <input name="_gotcha" tabIndex={-1} autoComplete="off" value={gotcha} onChange={e => setGotcha(e.target.value)} /></label></p>
