@@ -6,11 +6,12 @@ const dev = process.env.NODE_ENV !== 'production';
 // everything else is limited to this site, plus Plausible for visit counts.
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ''} https://plausible.io`,
+  `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ''} https://plausible.io https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
   "connect-src 'self' https://plausible.io",
+  "frame-src https://challenges.cloudflare.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
