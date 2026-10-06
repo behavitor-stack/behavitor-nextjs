@@ -24,7 +24,7 @@ export default function About() {
           <div className="team">
             {team.map(t => (
               <article className="person" key={t.name}>
-                <span className="person__photo">{t.photo ? <img src={t.photo} alt={t.name} loading="lazy" /> : <span aria-hidden="true">{initials(t.name)}</span>}</span>
+                <span className="person__photo">{t.photo ? <img src={t.photo} alt={t.name} loading="lazy" decoding="async" /> : <span aria-hidden="true">{initials(t.name)}</span>}</span>
                 <h3>{t.name}</h3><p className="person__role">{t.role}</p><p className="person__bio">{t.bio}</p>
               </article>
             ))}

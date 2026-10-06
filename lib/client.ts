@@ -1,9 +1,15 @@
 // Small browser-side helpers shared by the client components.
-declare global { interface Window { plausible?: (name: string, opts?: { props: Record<string, unknown> }) => void } }
+declare global {
+  interface Window {
+    plausible?: (name: string, opts?: { props: Record<string, unknown> }) => void;
+    gtag?: (...args: unknown[]) => void;
+  }
+}
 
 // conversion events (Plausible, only when switched on in content/data.js)
 export const track = (name: string, props?: Record<string, unknown>) => {
   try { window.plausible?.(name, props ? { props } : undefined); } catch { /* stats must never break the page */ }
+  try { window.gtag?.('event', name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''), props); } catch { /* stats must never break the page */ }
 };
 
 export const EMAIL = 'hello@behavitor.com';

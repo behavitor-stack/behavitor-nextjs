@@ -2,9 +2,9 @@
 
 export const site = {
   name: 'Behavitor',
-  url: 'https://behavitor.com',
+  url: 'https://www.behavitor.com',
   email: 'hello@behavitor.com',
-  privacyUpdated: 'October 1, 2026', // change when the privacy policy changes
+  privacyUpdated: 'October 6, 2026', // change when the privacy policy changes
   // Form sending. Paste each form's endpoint from formspree.io (or Basin / Getform) to switch it on,
   // e.g. 'https://formspree.io/f/abcdwxyz'. Left empty, a form opens the visitor's email app instead.
   forms: {

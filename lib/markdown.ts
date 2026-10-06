@@ -19,7 +19,7 @@ const safeUrl = (u: string) => (/^(https?:\/\/|\/|#|mailto:)/i.test(u.trim()) ? 
 const inline = (text: string) => {
   let s = esc(text);
   s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, alt, src) => `<img src="${safeUrl(src)}" alt="${alt}" loading="lazy">`);
+  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, alt, src) => `<img src="${safeUrl(src)}" alt="${alt}" loading="lazy" decoding="async">`);
   s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, t, href) => {
     const url = safeUrl(href);
     return `<a href="${url}"${/^https?:/i.test(url) ? ' rel="noopener"' : ''}>${t}</a>`;

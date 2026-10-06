@@ -9,6 +9,7 @@ export const metadata = pageMeta({
 
 export default function Privacy() {
   const mail = <a href={`mailto:${site.email}`}>{site.email}</a>;
+  const gaEnabled = Boolean(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID);
   return (
     <>
       <PageHead kicker="Privacy" title="Privacy policy" lead="Plain words about what we collect, why, and what you can ask us to do with it." />
@@ -27,10 +28,11 @@ export default function Privacy() {
           <li><strong>Resend</strong> delivers the messages you send through our forms to our inbox, and stores newsletter subscriptions.</li>
           <li><strong>Vercel</strong> hosts this website. It keeps short-lived server logs, such as IP addresses, to keep the site secure and running.</li>
           {site.analytics.plausibleDomain ? <li><strong>Plausible Analytics</strong> counts visits without cookies and without collecting personal data.</li> : null}
+          {gaEnabled ? <li><strong>Google Analytics</strong> helps us understand how visitors use the site. Google may set analytics cookies and process device and usage data under its own privacy policy.</li> : null}
           <li>Our typefaces are served from this website, so your browser doesn’t connect to anyone else to load them.</li>
         </ul>
         <h2>Cookies</h2>
-        <p>This site does not use tracking or advertising cookies.</p>
+        <p>{gaEnabled ? 'Google Analytics uses analytics cookies to measure site use. We do not use advertising cookies.' : 'This site does not use tracking or advertising cookies.'}</p>
         <h2>How long we keep it</h2>
         <p>We keep inquiries for as long as we are talking about or working on a project, and then for up to two years. Newsletter addresses are kept until you unsubscribe.</p>
         <h2>Your rights</h2>
